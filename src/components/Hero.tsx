@@ -1,9 +1,12 @@
 import { Button } from "@/components/ui/button";
 import { Shield, Sparkles } from "lucide-react";
 import { motion } from "framer-motion";
+import { useNavigate } from "react-router-dom";
 import heroImage from "@/assets/hero-shield.jpg";
 
 export const Hero = () => {
+  const navigate = useNavigate();
+
   return (
     <section className="relative min-h-screen flex items-center justify-center overflow-hidden">
       {/* Background gradient */}
@@ -48,6 +51,7 @@ export const Hero = () => {
               <Button 
                 size="lg" 
                 className="bg-primary hover:bg-primary/90 text-primary-foreground shadow-medium hover:shadow-strong transition-all"
+                onClick={() => navigate("/auth")}
               >
                 <Shield className="w-5 h-5 mr-2" />
                 Get Started Free
@@ -56,6 +60,7 @@ export const Hero = () => {
                 size="lg" 
                 variant="outline"
                 className="border-primary/30 hover:bg-gradient-feature transition-all"
+                onClick={() => window.scrollTo({ top: document.body.scrollHeight, behavior: 'smooth' })}
               >
                 Learn More
               </Button>

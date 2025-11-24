@@ -1,8 +1,11 @@
 import { Button } from "@/components/ui/button";
 import { Shield, ArrowRight } from "lucide-react";
 import { motion } from "framer-motion";
+import { useNavigate } from "react-router-dom";
 
 export const CTA = () => {
+  const navigate = useNavigate();
+
   return (
     <section className="py-24 relative overflow-hidden">
       <div className="absolute inset-0 bg-gradient-feature" />
@@ -36,6 +39,7 @@ export const CTA = () => {
               <Button 
                 size="lg" 
                 className="bg-primary hover:bg-primary/90 text-primary-foreground shadow-medium hover:shadow-strong transition-all"
+                onClick={() => navigate("/auth")}
               >
                 Get Started Free
                 <ArrowRight className="w-5 h-5 ml-2" />
@@ -44,6 +48,7 @@ export const CTA = () => {
                 size="lg" 
                 variant="outline"
                 className="border-primary/30 hover:bg-gradient-feature transition-all"
+                onClick={() => navigate("/auth")}
               >
                 Schedule a Demo
               </Button>
