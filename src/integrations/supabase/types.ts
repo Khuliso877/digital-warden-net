@@ -14,6 +14,56 @@ export type Database = {
   }
   public: {
     Tables: {
+      incident_reports: {
+        Row: {
+          created_at: string
+          description: string
+          evidence_files: string[] | null
+          id: string
+          incident_date: string | null
+          incident_type: string
+          platform: string | null
+          severity: string
+          status: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          description: string
+          evidence_files?: string[] | null
+          id?: string
+          incident_date?: string | null
+          incident_type: string
+          platform?: string | null
+          severity?: string
+          status?: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          description?: string
+          evidence_files?: string[] | null
+          id?: string
+          incident_date?: string | null
+          incident_type?: string
+          platform?: string | null
+          severity?: string
+          status?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "incident_reports_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       profiles: {
         Row: {
           created_at: string | null
