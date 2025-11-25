@@ -127,7 +127,11 @@ const Dashboard = () => {
               <CardDescription>Manage your protection settings</CardDescription>
             </CardHeader>
             <CardContent className="space-y-2">
-              <Button className="w-full" variant="outline">
+              <Button 
+                className="w-full" 
+                variant="outline"
+                onClick={() => navigate("/safety-filters")}
+              >
                 <Shield className="w-4 h-4 mr-2" />
                 Configure Safety Filters
               </Button>

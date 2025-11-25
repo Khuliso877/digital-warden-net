@@ -38,6 +38,50 @@ export type Database = {
         }
         Relationships: []
       }
+      safety_filters: {
+        Row: {
+          auto_block_enabled: boolean | null
+          blocked_keywords: string[] | null
+          content_filtering_enabled: boolean | null
+          created_at: string
+          id: string
+          safe_browsing_enabled: boolean | null
+          threat_sensitivity: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          auto_block_enabled?: boolean | null
+          blocked_keywords?: string[] | null
+          content_filtering_enabled?: boolean | null
+          created_at?: string
+          id?: string
+          safe_browsing_enabled?: boolean | null
+          threat_sensitivity?: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          auto_block_enabled?: boolean | null
+          blocked_keywords?: string[] | null
+          content_filtering_enabled?: boolean | null
+          created_at?: string
+          id?: string
+          safe_browsing_enabled?: boolean | null
+          threat_sensitivity?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "safety_filters_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: true
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       threat_alerts: {
         Row: {
           content: string | null
