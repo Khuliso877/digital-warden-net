@@ -10,11 +10,13 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useToast } from "@/hooks/use-toast";
 import { User, Settings, Activity, ArrowLeft, Save, Loader2 } from "lucide-react";
 import { User as SupabaseUser } from "@supabase/supabase-js";
+import { AvatarUpload } from "@/components/AvatarUpload";
 
 interface Profile {
   id: string;
   email: string | null;
   full_name: string | null;
+  avatar_url: string | null;
   email_notifications: boolean;
   threat_alerts_notifications: boolean;
   weekly_digest: boolean;
@@ -51,6 +53,7 @@ const Profile = () => {
 
   // Form state
   const [fullName, setFullName] = useState("");
+  const [avatarUrl, setAvatarUrl] = useState<string | null>(null);
   const [emailNotifications, setEmailNotifications] = useState(true);
   const [threatAlertsNotifications, setThreatAlertsNotifications] = useState(true);
   const [weeklyDigest, setWeeklyDigest] = useState(false);
@@ -96,6 +99,7 @@ const Profile = () => {
       if (data) {
         setProfile(data as Profile);
         setFullName(data.full_name || "");
+        setAvatarUrl(data.avatar_url || null);
         setEmailNotifications(data.email_notifications ?? true);
         setThreatAlertsNotifications(data.threat_alerts_notifications ?? true);
         setWeeklyDigest(data.weekly_digest ?? false);
@@ -258,6 +262,21 @@ const Profile = () => {
                 </CardDescription>
               </CardHeader>
               <CardContent className="space-y-6">
+                {/* Avatar Upload */}
+                <div className="flex flex-col items-center gap-4 pb-4 border-b border-border">
+                  {user && (
+                    <AvatarUpload
+                      userId={user.id}
+                      currentAvatarUrl={avatarUrl}
+                      userInitials={fullName ? fullName.split(" ").map(n => n[0]).join("").toUpperCase().slice(0, 2) : user.email?.slice(0, 2).toUpperCase() || "U"}
+                      onAvatarUpdate={(url) => setAvatarUrl(url)}
+                    />
+                  )}
+                  <p className="text-sm text-muted-foreground">
+                    Click on the avatar to upload a new picture
+                  </p>
+                </div>
+
                 <div className="space-y-2">
                   <Label htmlFor="email">Email Address</Label>
                   <Input
