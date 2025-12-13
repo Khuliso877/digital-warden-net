@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Shield, AlertTriangle, CheckCircle, LogOut, Users, TrendingUp, User as UserIcon } from "lucide-react";
 import { toast } from "sonner";
+import PanicButton from "@/components/PanicButton";
 import type { User } from "@supabase/supabase-js";
 
 const Dashboard = () => {
@@ -57,6 +58,7 @@ const Dashboard = () => {
             <span className="text-xl font-bold">GuardianNet AI</span>
           </div>
           <div className="flex items-center gap-2">
+            <PanicButton user={user} />
             <Button onClick={() => navigate("/profile")} variant="ghost" size="sm">
               <UserIcon className="w-4 h-4 mr-2" />
               Profile
