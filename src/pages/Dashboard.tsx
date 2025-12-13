@@ -141,7 +141,11 @@ const Dashboard = () => {
                 <Shield className="w-4 h-4 mr-2" />
                 Configure Safety Filters
               </Button>
-              <Button className="w-full" variant="outline">
+              <Button 
+                className="w-full" 
+                variant="outline"
+                onClick={() => navigate("/trusted-contacts")}
+              >
                 <Users className="w-4 h-4 mr-2" />
                 Manage Trusted Contacts
               </Button>
