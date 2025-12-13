@@ -180,6 +180,53 @@ export type Database = {
         }
         Relationships: []
       }
+      trusted_contacts: {
+        Row: {
+          created_at: string
+          email: string | null
+          id: string
+          name: string
+          notify_on_high_threat: boolean | null
+          notify_on_incident: boolean | null
+          phone: string | null
+          relationship: string | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          email?: string | null
+          id?: string
+          name: string
+          notify_on_high_threat?: boolean | null
+          notify_on_incident?: boolean | null
+          phone?: string | null
+          relationship?: string | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          email?: string | null
+          id?: string
+          name?: string
+          notify_on_high_threat?: boolean | null
+          notify_on_incident?: boolean | null
+          phone?: string | null
+          relationship?: string | null
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "trusted_contacts_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
     }
     Views: {
       [_ in never]: never
