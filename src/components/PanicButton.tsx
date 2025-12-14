@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
-import { AlertTriangle, Loader2 } from "lucide-react";
+import { AlertTriangle, Loader2, MapPin } from "lucide-react";
 import { toast } from "sonner";
 import {
   AlertDialog,
@@ -16,6 +16,7 @@ import {
 } from "@/components/ui/alert-dialog";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
+import { Checkbox } from "@/components/ui/checkbox";
 import type { User } from "@supabase/supabase-js";
 
 interface PanicButtonProps {
@@ -27,6 +28,43 @@ const PanicButton = ({ user, userName }: PanicButtonProps) => {
   const [sending, setSending] = useState(false);
   const [message, setMessage] = useState("");
   const [dialogOpen, setDialogOpen] = useState(false);
+  const [shareLocation, setShareLocation] = useState(true);
+  const [locationStatus, setLocationStatus] = useState<"idle" | "fetching" | "success" | "error">("idle");
+
+  const getLocation = (): Promise<string | undefined> => {
+    return new Promise((resolve) => {
+      if (!shareLocation) {
+        resolve(undefined);
+        return;
+      }
+
+      if (!navigator.geolocation) {
+        console.log("Geolocation not supported");
+        resolve(undefined);
+        return;
+      }
+
+      setLocationStatus("fetching");
+      navigator.geolocation.getCurrentPosition(
+        (position) => {
+          const { latitude, longitude } = position.coords;
+          const mapsLink = `https://www.google.com/maps?q=${latitude},${longitude}`;
+          setLocationStatus("success");
+          resolve(mapsLink);
+        },
+        (error) => {
+          console.error("Geolocation error:", error);
+          setLocationStatus("error");
+          resolve(undefined);
+        },
+        {
+          enableHighAccuracy: true,
+          timeout: 10000,
+          maximumAge: 0,
+        }
+      );
+    });
+  };
 
   const handlePanicAlert = async () => {
     if (!user) {
@@ -37,12 +75,15 @@ const PanicButton = ({ user, userName }: PanicButtonProps) => {
     setSending(true);
 
     try {
+      const location = await getLocation();
+
       const { data, error } = await supabase.functions.invoke("send-panic-alert", {
         body: {
           userId: user.id,
           userName: userName || user.email?.split("@")[0] || "User",
           userEmail: user.email,
           message: message.trim() || undefined,
+          location,
         },
       });
 
@@ -52,6 +93,7 @@ const PanicButton = ({ user, userName }: PanicButtonProps) => {
         toast.success(`Emergency alert sent to ${data.successCount} contact(s)`);
         setMessage("");
         setDialogOpen(false);
+        setLocationStatus("idle");
       } else {
         toast.warning(data.message || "No contacts were notified");
       }
@@ -96,6 +138,23 @@ const PanicButton = ({ user, userName }: PanicButtonProps) => {
                 rows={3}
               />
             </div>
+            <div className="flex items-center space-x-2">
+              <Checkbox
+                id="share-location"
+                checked={shareLocation}
+                onCheckedChange={(checked) => setShareLocation(checked === true)}
+              />
+              <Label htmlFor="share-location" className="flex items-center gap-1 cursor-pointer">
+                <MapPin className="w-4 h-4" />
+                Share my location with contacts
+              </Label>
+            </div>
+            {locationStatus === "fetching" && (
+              <p className="text-xs text-muted-foreground flex items-center gap-1">
+                <Loader2 className="w-3 h-3 animate-spin" />
+                Getting your location...
+              </p>
+            )}
             <div className="bg-muted p-3 rounded-lg text-sm">
               <p className="font-medium mb-1">Emergency Numbers:</p>
               <p>🇿🇦 SA Police: 10111 | GBV Hotline: 0800 150 150</p>
