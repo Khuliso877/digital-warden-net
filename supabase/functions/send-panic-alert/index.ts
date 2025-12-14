@@ -4,6 +4,10 @@ import { Resend } from "https://esm.sh/resend@2.0.0";
 
 const resend = new Resend(Deno.env.get("RESEND_API_KEY"));
 
+const twilioAccountSid = Deno.env.get("TWILIO_ACCOUNT_SID");
+const twilioAuthToken = Deno.env.get("TWILIO_AUTH_TOKEN");
+const twilioPhoneNumber = Deno.env.get("TWILIO_PHONE_NUMBER");
+
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
@@ -15,6 +19,43 @@ interface PanicAlertRequest {
   userEmail: string;
   message?: string;
   location?: string;
+}
+
+async function sendSMS(to: string, body: string): Promise<{ success: boolean; error?: string }> {
+  if (!twilioAccountSid || !twilioAuthToken || !twilioPhoneNumber) {
+    console.log("Twilio credentials not configured, skipping SMS");
+    return { success: false, error: "Twilio not configured" };
+  }
+
+  try {
+    const url = `https://api.twilio.com/2010-04-01/Accounts/${twilioAccountSid}/Messages.json`;
+    const credentials = btoa(`${twilioAccountSid}:${twilioAuthToken}`);
+
+    const response = await fetch(url, {
+      method: "POST",
+      headers: {
+        "Authorization": `Basic ${credentials}`,
+        "Content-Type": "application/x-www-form-urlencoded",
+      },
+      body: new URLSearchParams({
+        To: to,
+        From: twilioPhoneNumber,
+        Body: body,
+      }),
+    });
+
+    if (!response.ok) {
+      const errorText = await response.text();
+      console.error("Twilio API error:", errorText);
+      return { success: false, error: errorText };
+    }
+
+    console.log(`SMS sent successfully to ${to}`);
+    return { success: true };
+  } catch (error) {
+    console.error("Error sending SMS:", error);
+    return { success: false, error: String(error) };
+  }
 }
 
 serve(async (req) => {
@@ -66,7 +107,7 @@ serve(async (req) => {
     const emailPromises = contacts
       .filter((contact) => contact.email)
       .map((contact) => {
-        console.log(`Sending alert to: ${contact.email}`);
+        console.log(`Sending email alert to: ${contact.email}`);
         return resend.emails.send({
           from: "GuardianNet AI <onboarding@resend.dev>",
           to: [contact.email],
@@ -107,26 +148,44 @@ serve(async (req) => {
         });
       });
 
-    const results = await Promise.allSettled(emailPromises);
-    
-    const successCount = results.filter((r) => r.status === "fulfilled").length;
-    const failedCount = results.filter((r) => r.status === "rejected").length;
+    // Send SMS to each contact with a phone number
+    const smsMessage = `🚨 EMERGENCY ALERT from GuardianNet AI!\n\n${userName || "A user"} needs help!\n\nTime: ${timestamp}${message ? `\nMessage: ${message}` : ""}${location ? `\n\n📍 Location: ${location}` : ""}\n\nEmergency: 10111 | GBV: 0800 150 150`;
 
-    console.log(`Emails sent: ${successCount} success, ${failedCount} failed`);
+    const smsPromises = contacts
+      .filter((contact) => contact.phone)
+      .map((contact) => {
+        console.log(`Sending SMS alert to: ${contact.phone}`);
+        return sendSMS(contact.phone, smsMessage);
+      });
+
+    const [emailResults, smsResults] = await Promise.all([
+      Promise.allSettled(emailPromises),
+      Promise.allSettled(smsPromises),
+    ]);
+
+    const emailSuccessCount = emailResults.filter((r) => r.status === "fulfilled").length;
+    const emailFailedCount = emailResults.filter((r) => r.status === "rejected").length;
+    const smsSuccessCount = smsResults.filter((r) => r.status === "fulfilled" && (r.value as any)?.success).length;
+    const smsFailedCount = smsResults.length - smsSuccessCount;
+
+    console.log(`Emails sent: ${emailSuccessCount} success, ${emailFailedCount} failed`);
+    console.log(`SMS sent: ${smsSuccessCount} success, ${smsFailedCount} failed`);
 
     // Log failed sends
-    results.forEach((result, index) => {
+    emailResults.forEach((result, index) => {
       if (result.status === "rejected") {
-        console.error(`Failed to send to contact ${index}:`, result.reason);
+        console.error(`Failed to send email to contact ${index}:`, result.reason);
       }
     });
 
     return new Response(
       JSON.stringify({
         success: true,
-        message: `Alert sent to ${successCount} contacts`,
-        successCount,
-        failedCount,
+        message: `Alert sent to ${emailSuccessCount + smsSuccessCount} contacts`,
+        emailSuccessCount,
+        emailFailedCount,
+        smsSuccessCount,
+        smsFailedCount,
       }),
       {
         status: 200,
