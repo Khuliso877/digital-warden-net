@@ -83,13 +83,14 @@ serve(async (req) => {
                 <div style="background-color: white; padding: 15px; border-radius: 8px; margin: 15px 0;">
                   <p style="margin: 5px 0;"><strong>Time:</strong> ${timestamp}</p>
                   <p style="margin: 5px 0;"><strong>Contact Email:</strong> ${userEmail}</p>
-                  ${location ? `<p style="margin: 5px 0;"><strong>Location:</strong> ${location}</p>` : ""}
+                  ${location ? `<p style="margin: 5px 0;"><strong>📍 Location:</strong> <a href="${location}" style="color: #2563eb; text-decoration: underline;">View on Google Maps</a></p>` : ""}
                   ${message ? `<p style="margin: 5px 0;"><strong>Message:</strong> ${message}</p>` : ""}
                 </div>
                 <div style="background-color: #fef9c3; padding: 15px; border-radius: 8px; border: 1px solid #fde047;">
                   <p style="margin: 0; color: #854d0e; font-weight: bold;">What to do:</p>
                   <ul style="color: #854d0e; margin: 10px 0; padding-left: 20px;">
                     <li>Try to contact ${userName || "them"} immediately</li>
+                    ${location ? `<li>Check their location: <a href="${location}" style="color: #854d0e;">Open Map</a></li>` : ""}
                     <li>If you cannot reach them, consider contacting local authorities</li>
                     <li>South Africa Emergency: 10111</li>
                     <li>GBV Hotline: 0800 150 150</li>
