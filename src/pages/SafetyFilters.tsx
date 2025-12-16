@@ -139,25 +139,29 @@ const SafetyFilters = () => {
   return (
     <div className="min-h-screen bg-background">
       <header className="border-b bg-card">
-        <div className="container mx-auto px-4 py-4 flex items-center justify-between">
-          <div className="flex items-center gap-4">
-            <Button
-              onClick={() => navigate("/dashboard")}
-              variant="ghost"
-              size="sm"
-            >
-              <ArrowLeft className="w-4 h-4 mr-2" />
-              Back
-            </Button>
-            <div className="flex items-center gap-2">
-              <Shield className="w-8 h-8 text-primary" />
-              <span className="text-xl font-bold">Safety Filters</span>
+        <div className="container mx-auto px-4 py-3">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-2 sm:gap-4">
+              <Button
+                onClick={() => navigate("/dashboard")}
+                variant="ghost"
+                size="sm"
+                className="px-2 sm:px-3"
+              >
+                <ArrowLeft className="w-4 h-4 sm:mr-2" />
+                <span className="hidden sm:inline">Back</span>
+              </Button>
+              <div className="flex items-center gap-2">
+                <Shield className="w-6 h-6 sm:w-8 sm:h-8 text-primary" />
+                <span className="text-base sm:text-xl font-bold">Safety Filters</span>
+              </div>
             </div>
+            <Button onClick={handleSave} disabled={saving} size="sm" className="sm:size-default">
+              <Save className="w-4 h-4 sm:mr-2" />
+              <span className="hidden sm:inline">{saving ? 'Saving...' : 'Save Changes'}</span>
+              <span className="sm:hidden">{saving ? '...' : 'Save'}</span>
+            </Button>
           </div>
-          <Button onClick={handleSave} disabled={saving}>
-            <Save className="w-4 h-4 mr-2" />
-            {saving ? 'Saving...' : 'Save Changes'}
-          </Button>
         </div>
       </header>
 
@@ -179,10 +183,10 @@ const SafetyFilters = () => {
             </CardHeader>
             <CardContent>
               <div className="space-y-4">
-                <div className="grid grid-cols-3 gap-3">
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
                   <button
                     onClick={() => setFilters({ ...filters, threat_sensitivity: 'low' })}
-                    className={`p-4 rounded-lg border-2 transition-all ${
+                    className={`p-4 rounded-lg border-2 transition-all text-left ${
                       filters.threat_sensitivity === 'low'
                         ? 'border-primary bg-primary/10'
                         : 'border-border hover:border-primary/50'
@@ -193,7 +197,7 @@ const SafetyFilters = () => {
                   </button>
                   <button
                     onClick={() => setFilters({ ...filters, threat_sensitivity: 'medium' })}
-                    className={`p-4 rounded-lg border-2 transition-all ${
+                    className={`p-4 rounded-lg border-2 transition-all text-left ${
                       filters.threat_sensitivity === 'medium'
                         ? 'border-primary bg-primary/10'
                         : 'border-border hover:border-primary/50'
@@ -204,7 +208,7 @@ const SafetyFilters = () => {
                   </button>
                   <button
                     onClick={() => setFilters({ ...filters, threat_sensitivity: 'high' })}
-                    className={`p-4 rounded-lg border-2 transition-all ${
+                    className={`p-4 rounded-lg border-2 transition-all text-left ${
                       filters.threat_sensitivity === 'high'
                         ? 'border-primary bg-primary/10'
                         : 'border-border hover:border-primary/50'
