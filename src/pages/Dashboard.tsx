@@ -52,24 +52,38 @@ const Dashboard = () => {
   return (
     <div className="min-h-screen bg-background">
       <header className="border-b bg-card">
-        <div className="container mx-auto px-4 py-4 flex items-center justify-between">
-          <div className="flex items-center gap-2">
-            <Shield className="w-8 h-8 text-primary" />
-            <span className="text-xl font-bold">GuardianNet AI</span>
+        <div className="container mx-auto px-4 py-3">
+          {/* Top row - Logo and user actions */}
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <Shield className="w-6 h-6 sm:w-8 sm:h-8 text-primary" />
+              <span className="text-lg sm:text-xl font-bold">GuardianNet AI</span>
+            </div>
+            <div className="flex items-center gap-1 sm:gap-2">
+              <Button onClick={() => navigate("/profile")} variant="ghost" size="sm" className="px-2 sm:px-3">
+                <UserIcon className="w-4 h-4 sm:mr-2" />
+                <span className="hidden sm:inline">Profile</span>
+              </Button>
+              <Button onClick={handleSignOut} variant="outline" size="sm" className="px-2 sm:px-3">
+                <LogOut className="w-4 h-4 sm:mr-2" />
+                <span className="hidden sm:inline">Sign Out</span>
+              </Button>
+            </div>
           </div>
-          <div className="flex items-center gap-2">
+          {/* Panic Button - prominent on mobile */}
+          <div className="mt-3 flex justify-center sm:hidden">
             <PanicButton user={user} />
-            <Button onClick={() => navigate("/profile")} variant="ghost" size="sm">
-              <UserIcon className="w-4 h-4 mr-2" />
-              Profile
-            </Button>
-            <Button onClick={handleSignOut} variant="outline" size="sm">
-              <LogOut className="w-4 h-4 mr-2" />
-              Sign Out
-            </Button>
           </div>
         </div>
+        {/* Desktop panic button in header */}
+        <div className="hidden sm:block absolute top-3 right-4 sm:right-auto sm:relative sm:top-0">
+        </div>
       </header>
+      
+      {/* Floating Panic Button for desktop */}
+      <div className="hidden sm:block fixed bottom-6 right-6 z-50">
+        <PanicButton user={user} />
+      </div>
 
       <main className="container mx-auto px-4 py-8">
         <div className="mb-8">
