@@ -123,41 +123,43 @@ const PanicButton = ({ user, userName }: PanicButtonProps) => {
             <AlertTriangle className="w-5 h-5" />
             Send Emergency Alert
           </AlertDialogTitle>
-          <AlertDialogDescription className="text-left space-y-3">
-            <p>
-              This will immediately notify all your trusted contacts that you may need help.
-            </p>
-            <div className="space-y-2">
-              <Label htmlFor="panic-message">Optional message (what's happening?)</Label>
-              <Textarea
-                id="panic-message"
-                placeholder="Add any details that might help..."
-                value={message}
-                onChange={(e) => setMessage(e.target.value)}
-                className="resize-none"
-                rows={3}
-              />
-            </div>
-            <div className="flex items-center space-x-2">
-              <Checkbox
-                id="share-location"
-                checked={shareLocation}
-                onCheckedChange={(checked) => setShareLocation(checked === true)}
-              />
-              <Label htmlFor="share-location" className="flex items-center gap-1 cursor-pointer">
-                <MapPin className="w-4 h-4" />
-                Share my location with contacts
-              </Label>
-            </div>
-            {locationStatus === "fetching" && (
-              <p className="text-xs text-muted-foreground flex items-center gap-1">
-                <Loader2 className="w-3 h-3 animate-spin" />
-                Getting your location...
+          <AlertDialogDescription asChild>
+            <div className="text-left space-y-3">
+              <p>
+                This will immediately notify all your trusted contacts that you may need help.
               </p>
-            )}
-            <div className="bg-muted p-3 rounded-lg text-sm">
-              <p className="font-medium mb-1">Emergency Numbers:</p>
-              <p>🇿🇦 SA Police: 10111 | GBV Hotline: 0800 150 150</p>
+              <div className="space-y-2">
+                <Label htmlFor="panic-message">Optional message (what's happening?)</Label>
+                <Textarea
+                  id="panic-message"
+                  placeholder="Add any details that might help..."
+                  value={message}
+                  onChange={(e) => setMessage(e.target.value)}
+                  className="resize-none"
+                  rows={3}
+                />
+              </div>
+              <div className="flex items-center space-x-2">
+                <Checkbox
+                  id="share-location"
+                  checked={shareLocation}
+                  onCheckedChange={(checked) => setShareLocation(checked === true)}
+                />
+                <Label htmlFor="share-location" className="flex items-center gap-1 cursor-pointer">
+                  <MapPin className="w-4 h-4" />
+                  Share my location with contacts
+                </Label>
+              </div>
+              {locationStatus === "fetching" && (
+                <p className="text-xs text-muted-foreground flex items-center gap-1">
+                  <Loader2 className="w-3 h-3 animate-spin" />
+                  Getting your location...
+                </p>
+              )}
+              <div className="bg-muted p-3 rounded-lg text-sm">
+                <p className="font-medium mb-1">Emergency Numbers:</p>
+                <p>🇿🇦 SA Police: 10111 | GBV Hotline: 0800 150 150</p>
+              </div>
             </div>
           </AlertDialogDescription>
         </AlertDialogHeader>

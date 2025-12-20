@@ -290,7 +290,12 @@ const SafetyFilters = () => {
                   placeholder="Enter keyword to block..."
                   value={newKeyword}
                   onChange={(e) => setNewKeyword(e.target.value)}
-                  onKeyPress={(e) => e.key === 'Enter' && addKeyword()}
+                  onKeyDown={(e) => {
+                    if (e.key === "Enter") {
+                      e.preventDefault();
+                      addKeyword();
+                    }
+                  }}
                 />
                 <Button onClick={addKeyword} size="icon">
                   <Plus className="w-4 h-4" />
