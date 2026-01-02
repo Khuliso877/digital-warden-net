@@ -1,6 +1,4 @@
-## Project info
-
-**URL**: https://lovable.dev/projects/ed1ee61f-c4d3-418b-9d23-823c514a3569
+(https://digitalwarden.netlify.app/)
 
 # Digital Warden Net 🛡️ – Your Proactive Digital Guardian and Safety Assistant
 
