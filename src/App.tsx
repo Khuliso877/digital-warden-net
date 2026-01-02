@@ -10,6 +10,7 @@ import SafetyFilters from "./pages/SafetyFilters";
 import ReportIncident from "./pages/ReportIncident";
 import Profile from "./pages/Profile";
 import TrustedContacts from "./pages/TrustedContacts";
+import Install from "./pages/Install";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -28,6 +29,7 @@ const App = () => (
           <Route path="/report-incident" element={<ReportIncident />} />
           <Route path="/profile" element={<Profile />} />
           <Route path="/trusted-contacts" element={<TrustedContacts />} />
+          <Route path="/install" element={<Install />} />
           {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
           <Route path="*" element={<NotFound />} />
         </Routes>
