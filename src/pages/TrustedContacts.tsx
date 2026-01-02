@@ -6,6 +6,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
+import { Badge } from "@/components/ui/badge";
 import { Shield, ArrowLeft, Plus, Trash2, Users, Phone, Mail, UserCheck } from "lucide-react";
 import { toast } from "sonner";
 import {
@@ -33,7 +34,14 @@ interface TrustedContact {
   relationship: string | null;
   notify_on_high_threat: boolean;
   notify_on_incident: boolean;
+  tier: number;
 }
+
+const tierLabels: Record<number, { label: string; description: string; color: string }> = {
+  1: { label: "Tier 1", description: "Immediate (Family/Partner)", color: "bg-red-500" },
+  2: { label: "Tier 2", description: "Secondary (Friends/Colleagues)", color: "bg-orange-500" },
+  3: { label: "Tier 3", description: "Tertiary (Neighbors/Others)", color: "bg-yellow-500" },
+};
 
 const TrustedContacts = () => {
   const [user, setUser] = useState<User | null>(null);
@@ -48,6 +56,7 @@ const TrustedContacts = () => {
     relationship: "",
     notify_on_high_threat: true,
     notify_on_incident: true,
+    tier: 1,
   });
   const navigate = useNavigate();
 
@@ -82,6 +91,7 @@ const TrustedContacts = () => {
     const { data, error } = await supabase
       .from("trusted_contacts")
       .select("*")
+      .order("tier", { ascending: true })
       .order("created_at", { ascending: false });
 
     if (error) {
@@ -112,6 +122,7 @@ const TrustedContacts = () => {
       relationship: newContact.relationship || null,
       notify_on_high_threat: newContact.notify_on_high_threat,
       notify_on_incident: newContact.notify_on_incident,
+      tier: newContact.tier,
     });
 
     if (error) {
@@ -125,6 +136,7 @@ const TrustedContacts = () => {
         relationship: "",
         notify_on_high_threat: true,
         notify_on_incident: true,
+        tier: 1,
       });
       setDialogOpen(false);
       fetchContacts();
@@ -165,6 +177,30 @@ const TrustedContacts = () => {
     }
   };
 
+  const handleUpdateTier = async (id: string, tier: number) => {
+    const { error } = await supabase
+      .from("trusted_contacts")
+      .update({ tier })
+      .eq("id", id);
+
+    if (error) {
+      toast.error("Failed to update tier");
+    } else {
+      setContacts((prev) =>
+        prev.map((c) => (c.id === id ? { ...c, tier } : c))
+      );
+      toast.success("Contact tier updated");
+    }
+  };
+
+  // Group contacts by tier
+  const contactsByTier = contacts.reduce((acc, contact) => {
+    const tier = contact.tier || 1;
+    if (!acc[tier]) acc[tier] = [];
+    acc[tier].push(contact);
+    return acc;
+  }, {} as Record<number, TrustedContact[]>);
+
   if (loading && !contacts.length) {
     return (
       <div className="min-h-screen flex items-center justify-center">
@@ -195,9 +231,30 @@ const TrustedContacts = () => {
             Trusted Contacts
           </h1>
           <p className="text-muted-foreground">
-            Add emergency contacts who will be notified during safety alerts
+            Add emergency contacts organized by priority tiers for escalated alerts
           </p>
         </div>
+
+        {/* Escalation Info Card */}
+        <Card className="mb-6 border-primary/20 bg-primary/5">
+          <CardHeader className="pb-3">
+            <CardTitle className="text-lg">How Escalation Works</CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-2 text-sm text-muted-foreground">
+            <div className="flex items-center gap-2">
+              <Badge className="bg-red-500">Tier 1</Badge>
+              <span>Notified immediately when panic button is pressed</span>
+            </div>
+            <div className="flex items-center gap-2">
+              <Badge className="bg-orange-500">Tier 2</Badge>
+              <span>Notified after 5 minutes if no acknowledgment from Tier 1</span>
+            </div>
+            <div className="flex items-center gap-2">
+              <Badge className="bg-yellow-500">Tier 3</Badge>
+              <span>Notified after 10 minutes if no acknowledgment from Tier 1 & 2</span>
+            </div>
+          </CardContent>
+        </Card>
 
         <Card className="mb-6">
           <CardHeader>
@@ -205,7 +262,7 @@ const TrustedContacts = () => {
               <div>
                 <CardTitle>Emergency Contacts</CardTitle>
                 <CardDescription>
-                  These contacts will receive alerts based on your notification preferences
+                  Organize contacts by priority for escalated emergency responses
                 </CardDescription>
               </div>
               <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
@@ -233,6 +290,39 @@ const TrustedContacts = () => {
                           setNewContact({ ...newContact, name: e.target.value })
                         }
                       />
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="tier">Priority Tier *</Label>
+                      <Select
+                        value={String(newContact.tier)}
+                        onValueChange={(value) =>
+                          setNewContact({ ...newContact, tier: parseInt(value) })
+                        }
+                      >
+                        <SelectTrigger>
+                          <SelectValue placeholder="Select tier" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="1">
+                            <div className="flex items-center gap-2">
+                              <span className="w-2 h-2 rounded-full bg-red-500"></span>
+                              Tier 1 - Immediate (Family/Partner)
+                            </div>
+                          </SelectItem>
+                          <SelectItem value="2">
+                            <div className="flex items-center gap-2">
+                              <span className="w-2 h-2 rounded-full bg-orange-500"></span>
+                              Tier 2 - Secondary (Friends/Colleagues)
+                            </div>
+                          </SelectItem>
+                          <SelectItem value="3">
+                            <div className="flex items-center gap-2">
+                              <span className="w-2 h-2 rounded-full bg-yellow-500"></span>
+                              Tier 3 - Tertiary (Neighbors/Others)
+                            </div>
+                          </SelectItem>
+                        </SelectContent>
+                      </Select>
                     </div>
                     <div className="space-y-2">
                       <Label htmlFor="phone">Phone Number</Label>
@@ -273,6 +363,7 @@ const TrustedContacts = () => {
                           <SelectItem value="friend">Friend</SelectItem>
                           <SelectItem value="partner">Partner</SelectItem>
                           <SelectItem value="colleague">Colleague</SelectItem>
+                          <SelectItem value="neighbor">Neighbor</SelectItem>
                           <SelectItem value="counselor">Counselor</SelectItem>
                           <SelectItem value="other">Other</SelectItem>
                         </SelectContent>
@@ -323,80 +414,118 @@ const TrustedContacts = () => {
                 </p>
               </div>
             ) : (
-              <div className="space-y-4">
-                {contacts.map((contact) => (
-                  <div
-                    key={contact.id}
-                    className="border rounded-lg p-4 space-y-3"
-                  >
-                    <div className="flex items-start justify-between">
-                      <div>
-                        <h3 className="font-semibold text-lg">{contact.name}</h3>
-                        {contact.relationship && (
-                          <span className="text-sm text-muted-foreground capitalize">
-                            {contact.relationship}
-                          </span>
-                        )}
-                      </div>
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        className="text-destructive hover:text-destructive"
-                        onClick={() => handleDeleteContact(contact.id)}
-                      >
-                        <Trash2 className="w-4 h-4" />
-                      </Button>
-                    </div>
-                    <div className="flex flex-wrap gap-4 text-sm text-muted-foreground">
-                      {contact.phone && (
-                        <span className="flex items-center gap-1">
-                          <Phone className="w-4 h-4" />
-                          {contact.phone}
+              <div className="space-y-6">
+                {[1, 2, 3].map((tier) => {
+                  const tierContacts = contactsByTier[tier] || [];
+                  const tierInfo = tierLabels[tier];
+                  
+                  return (
+                    <div key={tier} className="space-y-3">
+                      <div className="flex items-center gap-2 pb-2 border-b">
+                        <Badge className={tierInfo.color}>{tierInfo.label}</Badge>
+                        <span className="text-sm text-muted-foreground">{tierInfo.description}</span>
+                        <span className="text-xs text-muted-foreground ml-auto">
+                          {tierContacts.length} contact{tierContacts.length !== 1 ? 's' : ''}
                         </span>
-                      )}
-                      {contact.email && (
-                        <span className="flex items-center gap-1">
-                          <Mail className="w-4 h-4" />
-                          {contact.email}
-                        </span>
+                      </div>
+                      
+                      {tierContacts.length === 0 ? (
+                        <p className="text-sm text-muted-foreground py-2 pl-4">
+                          No contacts in this tier
+                        </p>
+                      ) : (
+                        tierContacts.map((contact) => (
+                          <div
+                            key={contact.id}
+                            className="border rounded-lg p-4 space-y-3 ml-4"
+                          >
+                            <div className="flex items-start justify-between">
+                              <div>
+                                <h3 className="font-semibold text-lg">{contact.name}</h3>
+                                {contact.relationship && (
+                                  <span className="text-sm text-muted-foreground capitalize">
+                                    {contact.relationship}
+                                  </span>
+                                )}
+                              </div>
+                              <div className="flex items-center gap-2">
+                                <Select
+                                  value={String(contact.tier)}
+                                  onValueChange={(value) => handleUpdateTier(contact.id, parseInt(value))}
+                                >
+                                  <SelectTrigger className="w-24 h-8">
+                                    <SelectValue />
+                                  </SelectTrigger>
+                                  <SelectContent>
+                                    <SelectItem value="1">Tier 1</SelectItem>
+                                    <SelectItem value="2">Tier 2</SelectItem>
+                                    <SelectItem value="3">Tier 3</SelectItem>
+                                  </SelectContent>
+                                </Select>
+                                <Button
+                                  variant="ghost"
+                                  size="icon"
+                                  className="text-destructive hover:text-destructive"
+                                  onClick={() => handleDeleteContact(contact.id)}
+                                >
+                                  <Trash2 className="w-4 h-4" />
+                                </Button>
+                              </div>
+                            </div>
+                            <div className="flex flex-wrap gap-4 text-sm text-muted-foreground">
+                              {contact.phone && (
+                                <span className="flex items-center gap-1">
+                                  <Phone className="w-4 h-4" />
+                                  {contact.phone}
+                                </span>
+                              )}
+                              {contact.email && (
+                                <span className="flex items-center gap-1">
+                                  <Mail className="w-4 h-4" />
+                                  {contact.email}
+                                </span>
+                              )}
+                            </div>
+                            <div className="flex flex-wrap gap-6 pt-2 border-t">
+                              <div className="flex items-center gap-2">
+                                <Switch
+                                  id={`threat-${contact.id}`}
+                                  checked={contact.notify_on_high_threat}
+                                  onCheckedChange={(checked) =>
+                                    handleToggleNotification(
+                                      contact.id,
+                                      "notify_on_high_threat",
+                                      checked
+                                    )
+                                  }
+                                />
+                                <Label htmlFor={`threat-${contact.id}`} className="text-sm">
+                                  High threat alerts
+                                </Label>
+                              </div>
+                              <div className="flex items-center gap-2">
+                                <Switch
+                                  id={`incident-${contact.id}`}
+                                  checked={contact.notify_on_incident}
+                                  onCheckedChange={(checked) =>
+                                    handleToggleNotification(
+                                      contact.id,
+                                      "notify_on_incident",
+                                      checked
+                                    )
+                                  }
+                                />
+                                <Label htmlFor={`incident-${contact.id}`} className="text-sm">
+                                  Incident reports
+                                </Label>
+                              </div>
+                            </div>
+                          </div>
+                        ))
                       )}
                     </div>
-                    <div className="flex flex-wrap gap-6 pt-2 border-t">
-                      <div className="flex items-center gap-2">
-                        <Switch
-                          id={`threat-${contact.id}`}
-                          checked={contact.notify_on_high_threat}
-                          onCheckedChange={(checked) =>
-                            handleToggleNotification(
-                              contact.id,
-                              "notify_on_high_threat",
-                              checked
-                            )
-                          }
-                        />
-                        <Label htmlFor={`threat-${contact.id}`} className="text-sm">
-                          High threat alerts
-                        </Label>
-                      </div>
-                      <div className="flex items-center gap-2">
-                        <Switch
-                          id={`incident-${contact.id}`}
-                          checked={contact.notify_on_incident}
-                          onCheckedChange={(checked) =>
-                            handleToggleNotification(
-                              contact.id,
-                              "notify_on_incident",
-                              checked
-                            )
-                          }
-                        />
-                        <Label htmlFor={`incident-${contact.id}`} className="text-sm">
-                          Incident reports
-                        </Label>
-                      </div>
-                    </div>
-                  </div>
-                ))}
+                  );
+                })}
               </div>
             )}
           </CardContent>

@@ -190,6 +190,7 @@ export type Database = {
           notify_on_incident: boolean | null
           phone: string | null
           relationship: string | null
+          tier: number
           updated_at: string
           user_id: string
         }
@@ -202,6 +203,7 @@ export type Database = {
           notify_on_incident?: boolean | null
           phone?: string | null
           relationship?: string | null
+          tier?: number
           updated_at?: string
           user_id: string
         }
@@ -214,6 +216,7 @@ export type Database = {
           notify_on_incident?: boolean | null
           phone?: string | null
           relationship?: string | null
+          tier?: number
           updated_at?: string
           user_id?: string
         }
