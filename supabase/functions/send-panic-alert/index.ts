@@ -19,6 +19,8 @@ interface PanicAlertRequest {
   userEmail: string;
   message?: string;
   location?: string;
+  audioBase64?: string; // Base64 encoded audio data
+  imageBase64?: string; // Base64 encoded image data
   tier?: number; // Which tier to notify (1, 2, or 3). Defaults to 1.
   alertId?: string; // For tracking escalation
 }
@@ -76,13 +78,47 @@ async function sendEmailAlert(
   timestamp: string,
   message?: string,
   location?: string,
-  tierInfo?: string
+  tierInfo?: string,
+  audioBase64?: string,
+  imageBase64?: string
 ) {
   console.log(`Sending email alert to: ${contact.email}`);
+  
+  // Build attachments array if media is present
+  const attachments: Array<{ filename: string; content: string }> = [];
+  
+  if (imageBase64) {
+    attachments.push({
+      filename: `emergency-photo-${Date.now()}.jpg`,
+      content: imageBase64
+    });
+    console.log("Adding image attachment to email");
+  }
+  
+  if (audioBase64) {
+    attachments.push({
+      filename: `emergency-audio-${Date.now()}.webm`,
+      content: audioBase64
+    });
+    console.log("Adding audio attachment to email");
+  }
+  
+  const hasMedia = attachments.length > 0;
+  const mediaNotice = hasMedia 
+    ? `<div style="background-color: #dbeafe; padding: 12px; border-radius: 8px; border: 1px solid #93c5fd; margin: 10px 0;">
+        <p style="margin: 0; color: #1e40af; font-weight: bold;">📎 Media Attachments Included</p>
+        <p style="margin: 5px 0 0 0; color: #1e40af; font-size: 14px;">
+          ${imageBase64 ? '📷 Photo captured at time of alert<br>' : ''}
+          ${audioBase64 ? '🎙️ Audio recording (last 30 seconds)' : ''}
+        </p>
+      </div>`
+    : '';
+
   return resend.emails.send({
     from: "GuardianNet AI <onboarding@resend.dev>",
     to: [contact.email!],
     subject: "🚨 URGENT: Safety Alert from GuardianNet AI",
+    attachments: attachments.length > 0 ? attachments : undefined,
     html: `
       <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px;">
         <div style="background-color: #dc2626; color: white; padding: 20px; border-radius: 8px 8px 0 0; text-align: center;">
@@ -93,6 +129,7 @@ async function sendEmailAlert(
           <p style="font-size: 16px; color: #991b1b; margin: 0 0 15px 0;">
             <strong>${userName || "A GuardianNet user"}</strong> has activated their panic button and may need immediate assistance.
           </p>
+          ${mediaNotice}
           <div style="background-color: white; padding: 15px; border-radius: 8px; margin: 15px 0;">
             <p style="margin: 5px 0;"><strong>Time:</strong> ${timestamp}</p>
             <p style="margin: 5px 0;"><strong>Contact Email:</strong> ${userEmail}</p>
@@ -133,9 +170,9 @@ serve(async (req) => {
     const supabaseServiceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
     const supabase = createClient(supabaseUrl, supabaseServiceKey);
 
-    const { userId, userName, userEmail, message, location, tier = 1, alertId }: PanicAlertRequest = await req.json();
+    const { userId, userName, userEmail, message, location, audioBase64, imageBase64, tier = 1, alertId }: PanicAlertRequest = await req.json();
     
-    console.log(`Processing panic alert for user: ${userId}, tier: ${tier}`);
+    console.log(`Processing panic alert for user: ${userId}, tier: ${tier}, hasAudio: ${!!audioBase64}, hasImage: ${!!imageBase64}`);
 
     // Fetch trusted contacts for the user filtered by tier
     const { data: contacts, error: contactsError } = await supabase
@@ -210,7 +247,7 @@ serve(async (req) => {
     const emailPromises = contacts
       .filter((contact: TrustedContact) => contact.email)
       .map((contact: TrustedContact) => 
-        sendEmailAlert(contact, userName, userEmail, timestamp, message, location, tierInfo)
+        sendEmailAlert(contact, userName, userEmail, timestamp, message, location, tierInfo, audioBase64, imageBase64)
       );
 
     // Send SMS to each contact with a phone number

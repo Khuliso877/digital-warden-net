@@ -1,7 +1,7 @@
 import { useState, useRef, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
-import { AlertTriangle, Loader2, MapPin, Clock } from "lucide-react";
+import { AlertTriangle, Loader2, MapPin, Clock, Mic, Camera, MicOff, Shield } from "lucide-react";
 import { toast } from "sonner";
 import {
   AlertDialog,
@@ -18,6 +18,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Progress } from "@/components/ui/progress";
+import { useMediaCapture } from "@/hooks/useMediaCapture";
 import type { User } from "@supabase/supabase-js";
 
 interface PanicButtonProps {
@@ -25,28 +26,70 @@ interface PanicButtonProps {
   userName?: string;
 }
 
+interface CapturedContextData {
+  location?: string;
+  message?: string;
+  audioBase64?: string;
+  imageBase64?: string;
+}
+
 const ESCALATION_DELAY_MS = 5 * 60 * 1000; // 5 minutes per tier
+const AUDIO_BUFFER_SECONDS = 30;
 
 const PanicButton = ({ user, userName }: PanicButtonProps) => {
   const [sending, setSending] = useState(false);
   const [message, setMessage] = useState("");
   const [dialogOpen, setDialogOpen] = useState(false);
   const [shareLocation, setShareLocation] = useState(true);
+  const [captureAudio, setCaptureAudio] = useState(false);
+  const [capturePhoto, setCapturePhoto] = useState(false);
   const [locationStatus, setLocationStatus] = useState<"idle" | "fetching" | "success" | "error">("idle");
   const [escalationActive, setEscalationActive] = useState(false);
   const [currentTier, setCurrentTier] = useState(1);
   const [escalationProgress, setEscalationProgress] = useState(0);
   const escalationTimerRef = useRef<NodeJS.Timeout | null>(null);
   const progressIntervalRef = useRef<NodeJS.Timeout | null>(null);
-  const alertDataRef = useRef<{ location?: string; message?: string } | null>(null);
+  const alertDataRef = useRef<CapturedContextData | null>(null);
+
+  const {
+    isRecordingAudio,
+    hasAudioPermission,
+    isMediaCaptureSupported,
+    startAudioCapture,
+    stopAudioCapture,
+    captureAllMedia,
+  } = useMediaCapture({ audioBufferSeconds: AUDIO_BUFFER_SECONDS });
 
   // Cleanup timers on unmount
   useEffect(() => {
     return () => {
       if (escalationTimerRef.current) clearTimeout(escalationTimerRef.current);
       if (progressIntervalRef.current) clearInterval(progressIntervalRef.current);
+      stopAudioCapture();
     };
-  }, []);
+  }, [stopAudioCapture]);
+
+  // Start/stop audio capture when option is toggled
+  useEffect(() => {
+    if (captureAudio && dialogOpen) {
+      startAudioCapture();
+    } else {
+      stopAudioCapture();
+    }
+  }, [captureAudio, dialogOpen, startAudioCapture, stopAudioCapture]);
+
+  // Convert blob to base64 for sending
+  const blobToBase64 = (blob: Blob): Promise<string> => {
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        const base64 = reader.result as string;
+        resolve(base64.split(",")[1]); // Remove data:mime;base64, prefix
+      };
+      reader.onerror = reject;
+      reader.readAsDataURL(blob);
+    });
+  };
 
   const getLocation = (): Promise<string | undefined> => {
     return new Promise((resolve) => {
@@ -83,7 +126,10 @@ const PanicButton = ({ user, userName }: PanicButtonProps) => {
     });
   };
 
-  const sendAlertToTier = async (tier: number, location?: string, customMessage?: string) => {
+  const sendAlertToTier = async (
+    tier: number, 
+    contextData?: CapturedContextData
+  ) => {
     if (!user) return null;
 
     console.log(`Sending alert to tier ${tier}`);
@@ -93,8 +139,10 @@ const PanicButton = ({ user, userName }: PanicButtonProps) => {
         userId: user.id,
         userName: userName || user.email?.split("@")[0] || "User",
         userEmail: user.email,
-        message: customMessage || undefined,
-        location,
+        message: contextData?.message || undefined,
+        location: contextData?.location,
+        audioBase64: contextData?.audioBase64,
+        imageBase64: contextData?.imageBase64,
         tier,
       },
     });
@@ -127,11 +175,7 @@ const PanicButton = ({ user, userName }: PanicButtonProps) => {
       if (progressIntervalRef.current) clearInterval(progressIntervalRef.current);
       
       try {
-        const data = await sendAlertToTier(
-          tier + 1,
-          alertDataRef.current?.location,
-          alertDataRef.current?.message
-        );
+        const data = await sendAlertToTier(tier + 1, alertDataRef.current || undefined);
         
         if (data?.success && (data.emailSuccessCount > 0 || data.smsSuccessCount > 0)) {
           toast.info(`Escalated to Tier ${tier + 1}: ${data.emailSuccessCount + data.smsSuccessCount} contact(s) notified`);
@@ -169,13 +213,44 @@ const PanicButton = ({ user, userName }: PanicButtonProps) => {
     setSending(true);
 
     try {
+      // Gather all context data
       const location = await getLocation();
       const trimmedMessage = message.trim() || undefined;
       
-      // Store for escalation
-      alertDataRef.current = { location, message: trimmedMessage };
+      // Capture media if enabled
+      let audioBase64: string | undefined;
+      let imageBase64: string | undefined;
 
-      const data = await sendAlertToTier(1, location, trimmedMessage);
+      if (captureAudio || capturePhoto) {
+        toast.info("Capturing context data...");
+        const media = await captureAllMedia({ audio: captureAudio, photo: capturePhoto });
+        
+        if (media.audioBlob) {
+          audioBase64 = await blobToBase64(media.audioBlob);
+          console.log("Audio captured, base64 length:", audioBase64.length);
+        }
+        
+        if (media.imageBlob) {
+          imageBase64 = await blobToBase64(media.imageBlob);
+          console.log("Image captured, base64 length:", imageBase64.length);
+        }
+      }
+
+      // Stop audio capture after capturing
+      if (isRecordingAudio) {
+        stopAudioCapture();
+      }
+      
+      // Store for escalation
+      const contextData: CapturedContextData = { 
+        location, 
+        message: trimmedMessage,
+        audioBase64,
+        imageBase64
+      };
+      alertDataRef.current = contextData;
+
+      const data = await sendAlertToTier(1, contextData);
 
       if (data?.success) {
         const count = (data.emailSuccessCount || 0) + (data.smsSuccessCount || 0);
@@ -266,17 +341,71 @@ const PanicButton = ({ user, userName }: PanicButtonProps) => {
                     rows={3}
                   />
                 </div>
-                <div className="flex items-center space-x-2">
-                  <Checkbox
-                    id="share-location"
-                    checked={shareLocation}
-                    onCheckedChange={(checked) => setShareLocation(checked === true)}
-                  />
-                  <Label htmlFor="share-location" className="flex items-center gap-1 cursor-pointer">
-                    <MapPin className="w-4 h-4" />
-                    Share my location with contacts
-                  </Label>
+                {/* Context Gathering Options */}
+                <div className="space-y-2 pt-2 border-t">
+                  <p className="text-xs font-medium text-muted-foreground flex items-center gap-1">
+                    <Shield className="w-3 h-3" />
+                    Context Gathering (with your consent)
+                  </p>
+                  
+                  <div className="flex items-center space-x-2">
+                    <Checkbox
+                      id="share-location"
+                      checked={shareLocation}
+                      onCheckedChange={(checked) => setShareLocation(checked === true)}
+                    />
+                    <Label htmlFor="share-location" className="flex items-center gap-1 cursor-pointer text-sm">
+                      <MapPin className="w-4 h-4" />
+                      Share my location
+                    </Label>
+                  </div>
+                  
+                  {isMediaCaptureSupported && (
+                    <>
+                      <div className="flex items-center space-x-2">
+                        <Checkbox
+                          id="capture-audio"
+                          checked={captureAudio}
+                          onCheckedChange={(checked) => setCaptureAudio(checked === true)}
+                        />
+                        <Label htmlFor="capture-audio" className="flex items-center gap-1 cursor-pointer text-sm">
+                          {isRecordingAudio ? (
+                            <Mic className="w-4 h-4 text-destructive animate-pulse" />
+                          ) : (
+                            <MicOff className="w-4 h-4" />
+                          )}
+                          Record ambient audio (last {AUDIO_BUFFER_SECONDS}s)
+                        </Label>
+                      </div>
+                      
+                      <div className="flex items-center space-x-2">
+                        <Checkbox
+                          id="capture-photo"
+                          checked={capturePhoto}
+                          onCheckedChange={(checked) => setCapturePhoto(checked === true)}
+                        />
+                        <Label htmlFor="capture-photo" className="flex items-center gap-1 cursor-pointer text-sm">
+                          <Camera className="w-4 h-4" />
+                          Take photo on send
+                        </Label>
+                      </div>
+                    </>
+                  )}
+                  
+                  {isRecordingAudio && (
+                    <p className="text-xs text-destructive flex items-center gap-1">
+                      <Mic className="w-3 h-3 animate-pulse" />
+                      Recording... Audio will be sent with alert
+                    </p>
+                  )}
+                  
+                  {(captureAudio || capturePhoto) && (
+                    <p className="text-xs text-muted-foreground bg-muted/50 p-2 rounded">
+                      Media will be securely sent to your trusted contacts only. It is not stored on any servers.
+                    </p>
+                  )}
                 </div>
+
                 {locationStatus === "fetching" && (
                   <p className="text-xs text-muted-foreground flex items-center gap-1">
                     <Loader2 className="w-3 h-3 animate-spin" />
