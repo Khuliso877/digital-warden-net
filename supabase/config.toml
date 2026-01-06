@@ -2,3 +2,6 @@ project_id = "oanywucwayyxulfqdiwn"
 
 [functions.send-panic-alert]
 verify_jwt = true
+
+[functions.send-password-reset]
+verify_jwt = false
