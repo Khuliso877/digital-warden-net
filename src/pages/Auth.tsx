@@ -22,9 +22,13 @@ const Auth = () => {
     setLoading(true);
 
     try {
-      const { error } = await supabase.auth.resetPasswordForEmail(email, {
-        redirectTo: `${window.location.origin}/auth?reset=true`,
+      const { error } = await supabase.functions.invoke("send-password-reset", {
+        body: {
+          email,
+          redirectTo: `${window.location.origin}/auth?reset=true`,
+        },
       });
+      
       if (error) throw error;
       toast.success("Password reset email sent! Check your inbox.");
       setIsForgotPassword(false);
