@@ -8,3 +8,6 @@ verify_jwt = false
 
 [functions.verify-turnstile]
 verify_jwt = false
+
+[functions.analyze-network]
+verify_jwt = false

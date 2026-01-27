@@ -64,6 +64,144 @@ export type Database = {
           },
         ]
       }
+      network_anomalies: {
+        Row: {
+          affected_ips: string[] | null
+          affected_ports: number[] | null
+          ai_analysis: string | null
+          anomaly_type: string
+          confidence_score: number
+          created_at: string
+          description: string
+          detected_at: string
+          id: string
+          raw_data: Json | null
+          resolved_at: string | null
+          severity: string
+          status: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          affected_ips?: string[] | null
+          affected_ports?: number[] | null
+          ai_analysis?: string | null
+          anomaly_type: string
+          confidence_score?: number
+          created_at?: string
+          description: string
+          detected_at?: string
+          id?: string
+          raw_data?: Json | null
+          resolved_at?: string | null
+          severity?: string
+          status?: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          affected_ips?: string[] | null
+          affected_ports?: number[] | null
+          ai_analysis?: string | null
+          anomaly_type?: string
+          confidence_score?: number
+          created_at?: string
+          description?: string
+          detected_at?: string
+          id?: string
+          raw_data?: Json | null
+          resolved_at?: string | null
+          severity?: string
+          status?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      network_baselines: {
+        Row: {
+          baseline_data: Json
+          created_at: string
+          id: string
+          last_updated: string
+          learning_period_hours: number | null
+          total_events_analyzed: number | null
+          user_id: string
+        }
+        Insert: {
+          baseline_data?: Json
+          created_at?: string
+          id?: string
+          last_updated?: string
+          learning_period_hours?: number | null
+          total_events_analyzed?: number | null
+          user_id: string
+        }
+        Update: {
+          baseline_data?: Json
+          created_at?: string
+          id?: string
+          last_updated?: string
+          learning_period_hours?: number | null
+          total_events_analyzed?: number | null
+          user_id?: string
+        }
+        Relationships: []
+      }
+      network_events: {
+        Row: {
+          bytes_in: number | null
+          bytes_out: number | null
+          connection_duration_ms: number | null
+          created_at: string
+          destination_ip: string
+          destination_port: number | null
+          event_type: string
+          id: string
+          metadata: Json | null
+          packet_count: number | null
+          protocol: string
+          source_ip: string
+          source_port: number | null
+          timestamp: string
+          user_id: string
+        }
+        Insert: {
+          bytes_in?: number | null
+          bytes_out?: number | null
+          connection_duration_ms?: number | null
+          created_at?: string
+          destination_ip: string
+          destination_port?: number | null
+          event_type?: string
+          id?: string
+          metadata?: Json | null
+          packet_count?: number | null
+          protocol?: string
+          source_ip: string
+          source_port?: number | null
+          timestamp?: string
+          user_id: string
+        }
+        Update: {
+          bytes_in?: number | null
+          bytes_out?: number | null
+          connection_duration_ms?: number | null
+          created_at?: string
+          destination_ip?: string
+          destination_port?: number | null
+          event_type?: string
+          id?: string
+          metadata?: Json | null
+          packet_count?: number | null
+          protocol?: string
+          source_ip?: string
+          source_port?: number | null
+          timestamp?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       profiles: {
         Row: {
           avatar_url: string | null

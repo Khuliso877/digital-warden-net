@@ -3,7 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Shield, AlertTriangle, CheckCircle, LogOut, Users, TrendingUp, User as UserIcon } from "lucide-react";
+import { Shield, AlertTriangle, CheckCircle, LogOut, Users, TrendingUp, User as UserIcon, Activity } from "lucide-react";
 import { toast } from "sonner";
 import PanicButton from "@/components/PanicButton";
 import type { User } from "@supabase/supabase-js";
@@ -149,6 +149,14 @@ const Dashboard = () => {
               <CardDescription>Manage your protection settings</CardDescription>
             </CardHeader>
             <CardContent className="space-y-2">
+              <Button 
+                className="w-full" 
+                variant="outline"
+                onClick={() => navigate("/network-monitoring")}
+              >
+                <Activity className="w-4 h-4 mr-2" />
+                Network Monitoring & AI Detection
+              </Button>
               <Button 
                 className="w-full" 
                 variant="outline"

@@ -11,6 +11,7 @@ import ReportIncident from "./pages/ReportIncident";
 import Profile from "./pages/Profile";
 import TrustedContacts from "./pages/TrustedContacts";
 import Install from "./pages/Install";
+import NetworkMonitoring from "./pages/NetworkMonitoring";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -30,6 +31,7 @@ const App = () => (
           <Route path="/profile" element={<Profile />} />
           <Route path="/trusted-contacts" element={<TrustedContacts />} />
           <Route path="/install" element={<Install />} />
+          <Route path="/network-monitoring" element={<NetworkMonitoring />} />
           {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
           <Route path="*" element={<NotFound />} />
         </Routes>
