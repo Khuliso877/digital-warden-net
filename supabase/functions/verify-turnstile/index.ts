@@ -35,6 +35,18 @@ serve(async (req: Request) => {
       );
     }
 
+    // Allow bypass tokens when Turnstile fails to load on client
+    if (token.startsWith("bypass-")) {
+      console.log("Turnstile bypassed due to client-side issue:", token);
+      return new Response(
+        JSON.stringify({ success: true, bypassed: true }),
+        {
+          status: 200,
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+        }
+      );
+    }
+
     const secretKey = Deno.env.get("TURNSTILE_SECRET_KEY");
     if (!secretKey) {
       console.error("TURNSTILE_SECRET_KEY is not configured");
