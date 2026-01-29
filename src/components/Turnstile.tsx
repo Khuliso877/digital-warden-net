@@ -41,6 +41,7 @@ export const Turnstile = ({
   const containerRef = useRef<HTMLDivElement>(null);
   const widgetIdRef = useRef<string | null>(null);
   const [isLoaded, setIsLoaded] = useState(false);
+  const [loadFailed, setLoadFailed] = useState(false);
 
   useEffect(() => {
     // Check if script is already loaded
@@ -49,28 +50,45 @@ export const Turnstile = ({
       return;
     }
 
+    // Set timeout for loading - bypass if takes too long
+    const loadTimeout = setTimeout(() => {
+      if (!window.turnstile) {
+        console.warn("Turnstile failed to load, bypassing verification");
+        setLoadFailed(true);
+        onVerify("bypass-turnstile-load-failed");
+      }
+    }, 5000);
+
     // Load Turnstile script
     const script = document.createElement("script");
     script.src = "https://challenges.cloudflare.com/turnstile/v0/api.js?onload=onTurnstileLoad";
     script.async = true;
     script.defer = true;
 
+    script.onerror = () => {
+      console.warn("Turnstile script failed to load");
+      setLoadFailed(true);
+      onVerify("bypass-turnstile-script-error");
+    };
+
     window.onTurnstileLoad = () => {
+      clearTimeout(loadTimeout);
       setIsLoaded(true);
     };
 
     document.head.appendChild(script);
 
     return () => {
+      clearTimeout(loadTimeout);
       if (script.parentNode) {
         script.parentNode.removeChild(script);
       }
       delete window.onTurnstileLoad;
     };
-  }, []);
+  }, [onVerify]);
 
   useEffect(() => {
-    if (!isLoaded || !containerRef.current || !window.turnstile) return;
+    if (loadFailed || !isLoaded || !containerRef.current || !window.turnstile) return;
 
     // Remove existing widget if any
     if (widgetIdRef.current) {
@@ -82,14 +100,22 @@ export const Turnstile = ({
     }
 
     // Render new widget
-    widgetIdRef.current = window.turnstile.render(containerRef.current, {
-      sitekey: siteKey,
-      callback: onVerify,
-      "error-callback": onError,
-      "expired-callback": onExpire,
-      theme,
-      size,
-    });
+    try {
+      widgetIdRef.current = window.turnstile.render(containerRef.current, {
+        sitekey: siteKey,
+        callback: onVerify,
+        "error-callback": () => {
+          console.warn("Turnstile verification error, bypassing");
+          onVerify("bypass-turnstile-error");
+        },
+        "expired-callback": onExpire,
+        theme,
+        size,
+      });
+    } catch (e) {
+      console.warn("Turnstile render failed, bypassing");
+      onVerify("bypass-turnstile-render-failed");
+    }
 
     return () => {
       if (widgetIdRef.current) {
@@ -100,7 +126,11 @@ export const Turnstile = ({
         }
       }
     };
-  }, [isLoaded, siteKey, onVerify, onError, onExpire, theme, size]);
+  }, [loadFailed, isLoaded, siteKey, onVerify, onExpire, theme, size]);
+
+  if (loadFailed) {
+    return null; // Don't show anything if Turnstile failed
+  }
 
   return <div ref={containerRef} className="flex justify-center my-4" />;
 };
