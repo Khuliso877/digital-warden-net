@@ -62,7 +62,8 @@ const Auth = () => {
   const handleForgotPassword = async (e: React.FormEvent) => {
     e.preventDefault();
     
-    if (!turnstileToken) {
+    // Only require verification when Turnstile is actually configured.
+    if (TURNSTILE_SITE_KEY && !turnstileToken) {
       toast.error("Please complete the security verification");
       return;
     }
@@ -98,7 +99,8 @@ const Auth = () => {
   const handleAuth = async (e: React.FormEvent) => {
     e.preventDefault();
     
-    if (!turnstileToken) {
+    // Only require verification when Turnstile is actually configured.
+    if (TURNSTILE_SITE_KEY && !turnstileToken) {
       toast.error("Please complete the security verification");
       return;
     }
