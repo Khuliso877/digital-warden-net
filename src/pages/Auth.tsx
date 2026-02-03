@@ -22,7 +22,12 @@ const Auth = () => {
   const [turnstileToken, setTurnstileToken] = useState<string | null>(null);
   const navigate = useNavigate();
 
-  const verifyTurnstile = async (token: string): Promise<boolean> => {
+  const verifyTurnstile = async (token: string | null): Promise<boolean> => {
+    // If Turnstile isn't configured, don't block auth flows.
+    if (!TURNSTILE_SITE_KEY) return true;
+
+    if (!token) return false;
+
     try {
       const { data, error } = await supabase.functions.invoke("verify-turnstile", {
         body: { token },
